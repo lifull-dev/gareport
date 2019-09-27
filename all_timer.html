@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons.css">
+    <style>
+      .mod-timers {}
+      .mod-timers ul {
+        padding: 0;
+      }
+      .mod-timers ul li {
+        list-style: none;
+      }
+      .mod-timers li + li {
+        margin-top: 10px;
+        border-top: 1px solid #c4c4c4;
+        padding-top: 10px;
+      }
+      .mod-timers .timer > * + * {
+        margin-top: 5px;
+      }
+      .mod-timers .timer > .name {
+        font-weight: bold;
+        font-size: 1.2em;
+      }
+      .mod-timers .timer .remove {
+        color: blue;
+        text-decoration: underline;
+        cursor: pointer;
+      }
+      .mod-timers .timer > .setting .active {
+        font-weight: bold;
+        color: red;
+      }
+      .mod-timers .setting,
+      .mod-timers .setting td,
+      .mod-timers .setting th {
+        border-collapse: collapse;
+        border:1px solid #333;
+      }
+      .mod-timers .setting {
+        table-layout: fixed;
+      }
+      .mod-timers .setting td,
+      .mod-timers .setting th {
+        padding: 5px 20px;
+      }
+      .mod-timers .setting th {
+        background: #eee;
+      }
+      .mod-timers .setting .lastError .error {
+        background: #eee;
+        padding: 10px;
+        width: 350px;
+        overflow-x: scroll;
+        box-sizing: border-box;
+      }
+    </style>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.4/js/standalone/selectize.js"></script>
+    <script>
+    $(function () {
+      $('.mod-timers').on('click', '.remove', function (evt) {
+        var target = $(evt.currentTarget)
+          , id = target.data('id')
+          , agree
+          ;
+
+        evt.preventDefault();
+        agree = confirm('本当にスケジュール設定を解除してよろしいですか？');
+        if (!agree) { return; }
+
+        google.script.run.onTimerRemoved(id);
+        target.closest('li').hide();
+      })
+    })
+    </script>
+  </head>
+  <body>
+    <div class="mod-timers">
+      <ul>
+        <? timers.forEach(function (timer) { ?>
+        <li>
+          <div class="timer">
+            <div class="name">
+              <? if (timer.url) { ?>
+                <a href="<?= timer.url ?>" target="_blank"><?= timer.name ?></a>
+              <? } else { ?>
+                <span><?= timer.name ?></span>
+              <? } ?>
+            </div>
+            <div class="id"><?= timer.id ?> <span class="remove" data-id="<?= timer.id ?>">(設定を削除)</span></div>
+            <table class="setting">
+              <tr>
+                <th>status</th><th>間隔</th><th>時間帯</th><th>最後のエラー</th>
+              </tr>
+              <tr>
+                <td class="<?= timer.setting.enable ? 'active' : '' ?>"><?= timer.setting.enable ? '有効' : '無効' ?></td>
+                <td><?= timer.setting.every ?></td>
+                <td><?= timer.setting.hourOfDay ?>時台</td>
+                <td class="lastError">
+                <? if (timer.setting.lastError) { ?>
+                  <p>user: <?= timer.setting.lastError.user ?></p>
+                  <div>message: <pre class="error"><?= timer.setting.lastError.message ?></pre></div>
+                  <p>date: <?= timer.setting.lastError.date ?></p>
+                <? } else { ?>
+                  <p>none.</p>
+                <? } ?>
+                </td>
+              </tr>
+            </table>
+          </div>
+        <? }); ?>
+      </ul>
+    </div>
+  </body>
+</html>
+
+

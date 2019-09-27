@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons.css">
+    <style>
+    .mod-segments {
+    
+    }
+    .mod-segments ul {
+      padding: 0;
+    }
+    .mod-segments .segment {
+      list-style: none;
+    }
+    .mod-segments .segment .name {
+      position: relative;
+      background: #69c;
+      color: #fff;
+      line-height: 1.4;
+      padding: .7rem;
+      cursor: pointer;
+    }
+    .mod-segments .segment .name .arrow{
+      position: relative;
+      display: inline-block;
+      margin-right: 10px;
+      top: -3px;
+    }
+    .mod-segments .segment.is-hide .name .arrow {
+      top: 2px;
+    }
+
+    .mod-segments .segment .name .arrow::before{
+      display: block;
+      content: '';
+      width: 6px;
+      height: 6px;
+      border: 0px;
+      border-top: solid 2px #fff;
+      border-right: solid 2px #fff;
+      margin-top: -4px;
+          -ms-transform: rotate(135deg);
+      -webkit-transform: rotate(135deg);
+              transform: rotate(135deg);
+    }
+    .mod-segments .segment.is-hide .name .arrow::before{
+
+          -ms-transform: rotate(-45deg);
+      -webkit-transform: rotate(-45deg);
+              transform: rotate(-45deg);
+    }
+
+
+    .mod-segments .segment.is-hide .detail {
+      display: none;
+    }
+    </style>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script>
+    function ready() {
+      var root = $('#mod-segments');
+      root.on('click', '.segment .name', function (evt) {
+        evt.preventDefault();
+        var segment = $(evt.currentTarget).closest('.segment');
+        segment.toggleClass('is-hide');
+      })
+    }
+    </script>
+  </head>
+  <body>
+    <div class="mod-segments" id="mod-segments">
+      <ul class="list">
+        <? (segments.items || []).forEach(function (segment) { ?>
+        <li class="segment is-hide">
+          <p class="name"><span class="arrow"></span><?= segment.name ?></p>
+          <div class="detail">
+            <p>セグメントID: <input type="text" value="<?= segment.segmentId ?>" readonly></p>
+            <p>動的セグメント: <input type="text" value="<?= segment.definition ?>" readonly></p>
+          </div>
+        </li>
+      <? }); ?>
+    </ul>
+    </div>
+    <script>ready();</script>
+  </body>
+</html>
+
+

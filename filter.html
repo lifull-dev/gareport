@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.4/css/selectize.min.css">
+    <style>
+    .mod-filter {
+       margin-bottom: 150px;
+    }
+    .mod-filter .item {
+      position: relative;
+      background: #eff5f5;
+      padding: 10px;
+      border: 1px solid #d5e6ea;
+      padding: 10px;
+    }
+    .mod-filter .item + .item {
+      margin-top: 20px;
+    }
+    .mod-filter .item p + p {
+      margin-top: 20px;
+    }
+    .mod-filter .item .dimension {
+      max-width: 250px;
+      width: 250px;
+    }
+    .mod-filter .item .operator {
+      max-width: 100px;
+      width: 100px;
+    }
+    .mod-filter .item > .field {
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .mod-filter .item > .field + .field {
+      margin-left: 10px;
+    }
+    .mod-filter .item > .close {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      font-weight: bold;
+      font-size: 1.6rem;
+      vertical-align: middle;
+      cursor: pointer;
+    }
+    .mod-filter > .join {
+      margin: 20px;
+      text-align: center;
+    }
+    .mod-filter .copyField .label {
+      vertical-align: middle;
+    }
+    .mod-filter .copyField .copyValue {
+      vertical-align: middle;
+      display: inline-block;
+      padding: .4rem .7rem;
+      background: #eff5f5;
+    }
+    </style>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.4/js/standalone/selectize.js"></script>
+  </head>
+  <body>
+    <script type="text/x-template" id="template-item">
+      <div class="item prg-item">
+        <% if (type != null) { %>
+        <div class="join">
+          <span class="type"><%- type %><input type="hidden" name="type" value="<%= (type === 'AND' ? ';' : ',') %>"></span>
+        </div>
+        <% } %>
+        <div class="field">
+          <select name="dimension" class="dimension">
+            <option value="">選択してください</option>
+            <? Object.keys(dimensions || {}).forEach(function (key) { ?>
+              <optgroup label="<?= key ?>">
+              <? dimensions[key].forEach(function (dimension) { ?>
+                <option value="<?= dimension.id ?>"><?= dimension.name ?></option>
+              <? }); ?>
+              </optgroup>
+            <? }); ?>
+          </select>
+        </div>
+        <div class="field">
+          <select name="operator">
+            <option value="==">完全一致</option>
+            <option value="!=">一致しない</option>
+            <option value="=@">一部に一致</option>
+            <option value="!@">一部に一致しない</option>
+            <option value="=~">正規表現の一致を含む</option>
+            <option value="!~">正規表現に一致しない</option>
+          </select>
+        </div>
+        <div class="field">
+          <input type="text" name="expression" />
+        </div>
+        <% if (type != null) { %>
+        <span class="close">&times;</span>
+        <% } %>
+      </div>
+    </script>
+    <form id="generator">
+      <div class="mod-filter" id="mod-filter">
+        <div id="container">
+        </div>
+        <div class="join">
+          <button class="AND" data-type="AND">AND</button>
+          <button class="OR" data-type="OR">OR</button>
+        </div>
+        <p class="copyField"><span class="label">selected formula: </span> <span class="copyValue" id="value-view">-</span></p>
+      </div>
+    </form>
+    <script type="text/javascript">
+    var root = $('#mod-filter')
+      , container = root.find('#container')
+      , render = _.template($('#template-item').html())
+      , generator = $('#generator')
+      , view = $('#value-view')
+      ;
+      
+    container.html(render({type: null}));
+    root.find('.dimension').selectize({sortField: 'text'});
+    
+    root.on('click', '.join button', function (evt) {
+      evt.preventDefault();
+      var type = $(evt.currentTarget).data('type')
+        , html = render({type: type})
+        ;
+      container.append(html)
+      container.find('.item:last .dimension').selectize({sortField: 'text'});
+    });
+    
+    root.on('click', '.item .close', function (evt) {
+      evt.preventDefault();
+      $(evt.currentTarget).closest('.item').remove();
+      onChange();
+    })
+
+    root.on('change', ':input', _.throttle(onChange, 500));
+    
+    function onChange() {
+      var result = '';
+
+      $('.prg-item').each(function (idx, item) {
+        item = $(item);
+        var items = item.find('input,select')
+          , typeItem = items.filter('[name="type"]')
+          , join = (typeItem.length !== 0 ? typeItem.val() : '')
+          , operator = items.filter('[name="operator"]').val()
+          , expression = items.filter('[name="expression"]').val()
+          , dimension = items.filter('[name="dimension"]').val()
+          ;
+          
+        if (!(operator && expression && dimension)) {
+          return;
+        }
+        
+        result += [join, dimension, operator, expression].join('');
+      });
+      
+      view.text(result);
+    }
+    </script>
+  </body>
+</html>
+
+

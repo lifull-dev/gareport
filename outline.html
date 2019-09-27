@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.4/css/selectize.min.css">
+<style>
+#container {
+  margin-bottom: 200px;
+}
+#container .heading {
+  background: #e6e9ea;
+  padding: .5rem .7rem;
+  font-weight: bold;
+}
+#container select {
+  width: 80%;
+}
+#container select option {
+ line-height: 1.4;
+}
+#container .copyField .label {
+  vertical-align: middle;
+}
+#container .copyField .copyValue {
+  vertical-align: middle;
+  display: inline-block;
+  padding: .4rem .7rem;
+  background: #eff5f5;
+}
+</style>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.4/js/standalone/selectize.js"></script>
+<script>
+$(function () {
+  var root = $('#container');
+
+  //root.find('select.list-account').chosen({search_contains: true});
+  root.find('select.list-account').selectize({sortField: 'text'});
+
+  root.on('change', '.list-account', function (evt) {
+    var accountId = $(evt.currentTarget).val()
+      , step1 = root.find('.step1 > *')
+      ;
+
+    step1.empty();
+    root.find('#value-account').text(accountId || '-');
+
+    if (!accountId) {
+      return;
+    }
+
+    google.script.run
+      .withSuccessHandler(onAccountChanged)
+      .onAccountChanged(accountId);
+  });
+
+  function onAccountChanged(properties) {
+    var template = _.template($('#template-properties').html())
+      , container = root.find('.propertiesSetting')
+      , snippet
+      ;
+
+    container.html(template({properties: properties}));
+    root.find('select.list-property').selectize({sortField: 'text'});
+  }
+
+  root.on('change', '.list-property', function (evt) {
+    var accountId = root.find('.list-account').val()
+      , propertyId = $(evt.currentTarget).val()
+      , step2 = root.find('.step2 > *')
+      ;
+
+    step2.empty();
+    root.find('#value-property').text(propertyId || '-');
+
+    if (!accountId || !propertyId) {
+      return;
+    }
+
+    google.script.run
+      .withSuccessHandler(onPropertyChanged)
+      .onPropertyChanged(accountId, propertyId);
+  });
+
+  function onPropertyChanged(others) {
+    var template = _.template($('#template-others').html())
+      , container = root.find('.step2')
+      , snippet
+      ;
+
+    container.html(template({
+      views: others.views,
+      metrics: others.metrics,
+      dimensions: others.dimensions
+    }));
+
+    root.find('select.list-view').selectize({sortField: 'text'});
+    root.find('select.list-metric').selectize({sortField: 'text'});
+    root.find('select.list-dimension').selectize({sortField: 'text'});
+  }
+
+  root.on('change', '.list-view', function (evt) {
+    var id = root.find('.list-view').val()
+      ;
+    id = id ? 'ga:'+id : '-';
+    root.find('#value-view').text(id);
+  });
+
+  root.on('change', '.list-metric', function (evt) {
+    var id = root.find('.list-metric').val() || "-"
+      ;
+    root.find('#value-metric').text(id);
+  });
+
+  root.on('change', '.list-dimension', function (evt) {
+    var id = root.find('.list-dimension').val() || "-"
+      ;
+    root.find('#value-dimension').text(id);
+  });
+
+  root.on('click', '.filterGenerator', function (evt) {
+    evt.preventDefault();
+    var accountId = root.find('.list-account').val()
+      , propertyId = root.find('.list-property').val()
+      ;
+
+    google.script.run.onFilterGeneratorClicked({account: accountId, property: propertyId});
+  })
+});
+</script>
+  </head>
+  <body>
+    <div id="container">
+    <div class="accountSetting">
+      <p class="heading">アカウント</p>
+      <select name="account" class="list-account">
+        <option value="">選択してください</option>
+        <? (accountList.items || []).forEach(function (account) { ?>
+        <option value="<?= account.id ?>"><?= account.name ?></option>
+        <? }); ?>
+      </select>
+      <p class="copyField"><span class="label">selected id:</span> <span class="copyValue" id="value-account">-</span></p>
+    </div>
+    <div class="step1">
+      <div class="propertiesSetting">
+      </div>
+
+      <div class="step2">
+      </div>
+    </div>
+
+
+<script type="text/x-template" id="template-properties">
+  <p class="heading">プロパティ</p>
+  <select name="property" class="list-property">
+    <option value="">選択してください</option>
+    <% (properties.items || []).forEach(function (property) { %>
+    <option value="<%= property.id %>"><%- property.name %></option>
+    <% }); %>
+  </select>
+  <p class="copyField"><span class="label">selected property id:</span> <span class="copyValue" id="value-property">-</span></p>
+</script>
+
+<script type="text/x-template" id="template-others">
+  <div class="viewsSetting">
+    <p class="heading">view</p>
+    <select name="views" class="list-view">
+      <option value="">選択してください</option>
+      <% (views.items || []).forEach(function (view) { %>
+      <option value="<%= view.id %>"><%- view.name %></option>
+      <% }); %>
+    </select>
+    <p class="copyField"><span class="label">selected id: </span> <span class="copyValue" id="value-view">-</span></p>
+  </div>
+
+  <div class="metricsSetting">
+    <p class="heading">メトリックス</p>
+    <select name="metrics" class="list-metric">
+      <option value="">選択してください</option>
+      <% _.each(metrics || {}, function (group, key) { %>
+        <optgroup label="<%- key %>">
+        <% group.forEach(function (metric) { %>
+          <option value="<%= metric.id %>"><%- metric.name %></option>
+        <% }); %>
+　       </optgroup>
+      <% }); %>
+    </select>
+    <p class="copyField"><span class="label">selected id: </span> <span class="copyValue" id="value-metric">-</span></p>
+  </div>
+
+  <div class="dimensionsSetting">
+    <p class="heading">ディメンション</p>
+    <select name="dimensions" class="list-dimension">
+      <option value="">選択してください</option>
+      <% _.each(dimensions || {}, function (group, key) { %>
+      　  <optgroup label="<%- key %>">
+        <% group.forEach(function (dimension) { %>
+          <option value="<%= dimension.id %>"><%- dimension.name %></option>
+        <% }); %>
+　        </optgroup>
+      <% }); %>
+    </select>
+    <p class="copyField"><span class="label">selected id: </span> <span class="copyValue" id="value-dimension">-</span></p>
+  </div>
+
+  <div class="filterSetting">
+    <p class="heading">フィルタジェネレータ</p>
+    <button class="filterGenerator">ジェネレータを開く</button>
+  </div>
+</script>
+  </body>
+</html>
+
+
